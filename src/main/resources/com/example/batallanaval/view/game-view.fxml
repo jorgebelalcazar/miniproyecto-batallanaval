@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.example.batallanaval.controller.GameController"
+      alignment="TOP_CENTER"
+      spacing="15"
+      styleClass="game-root">
+
+    <padding>
+        <Insets top="20" bottom="20" left="20" right="20"/>
+    </padding>
+
+    <Label fx:id="titleLabel" text="Batalla Naval" styleClass="main-title"/>
+    <Label fx:id="statusLabel" text="Tu turno: dispara en el tablero principal"
+           styleClass="status" wrapText="true"/>
+
+    <!-- The two boards are injected by the controller into these containers -->
+    <HBox alignment="CENTER" spacing="40">
+        <VBox alignment="CENTER" spacing="8">
+            <Label text="Tablero de Posicion" styleClass="board-title"/>
+            <StackPane fx:id="positionBoardContainer"/>
+        </VBox>
+        <VBox alignment="CENTER" spacing="8">
+            <Label text="Tablero Principal" styleClass="board-title"/>
+            <StackPane fx:id="mainBoardContainer"/>
+        </VBox>
+    </HBox>
+
+    <!-- HU-3: verification option to reveal the enemy fleet -->
+    <HBox alignment="CENTER" spacing="15">
+        <Button fx:id="revealButton" text="Mostrar flota enemiga (verificacion)"
+                onAction="#onToggleReveal" styleClass="secondary-button"/>
+    </HBox>
+
+</VBox>
