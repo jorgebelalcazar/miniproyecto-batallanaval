@@ -19,8 +19,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * The focus is the equals/hashCode contract, because Coordinate is used as the key
  * of the board Map. If that contract is broken, the whole board breaks silently.
  *
- * @author Jorge Belalcazar
- * @version 1.0
  */
 class CoordinateTest {
 
