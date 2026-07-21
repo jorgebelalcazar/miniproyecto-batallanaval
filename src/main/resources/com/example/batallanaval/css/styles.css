@@ -1,0 +1,72 @@
+/* ================================================================
+   BATALLA NAVAL - STYLES
+================================================================ */
+
+/* ============== ROOT CONTAINER ============== */
+.root-container {
+    -fx-background-color: linear-gradient(to bottom, #0a2a43, #14507a);
+    -fx-font-family: "Segoe UI", "Arial", sans-serif;
+}
+
+/* ============== TITLES ============== */
+.main-title {
+    -fx-font-size: 42px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ecf0f1;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 4, 0, 0, 2);
+}
+
+.subtitle {
+    -fx-font-size: 13px;
+    -fx-text-fill: #aed6f1;
+    -fx-font-style: italic;
+}
+
+/* ============== INSTRUCTION ============== */
+.instruction {
+    -fx-font-size: 15px;
+    -fx-text-fill: #ecf0f1;
+}
+
+/* ============== NICKNAME FIELD ============== */
+.nickname-field {
+    -fx-font-size: 15px;
+    -fx-background-radius: 8;
+    -fx-padding: 8;
+}
+
+/* ============== PRIMARY BUTTON ============== */
+.primary-button {
+    -fx-background-color: #e67e22;
+    -fx-text-fill: white;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 5, 0, 0, 2);
+}
+
+.primary-button:hover {
+    -fx-background-color: #d35400;
+}
+
+/* ============== SECONDARY BUTTON ============== */
+.secondary-button {
+    -fx-background-color: #5d6d7e;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+}
+
+.secondary-button:hover {
+    -fx-background-color: #34495e;
+}
+
+/* ============== STATUS LABEL ============== */
+.status {
+    -fx-font-size: 13px;
+    -fx-text-fill: #f9e79f;
+    -fx-text-alignment: center;
+}

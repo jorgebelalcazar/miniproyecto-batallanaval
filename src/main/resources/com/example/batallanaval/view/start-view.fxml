@@ -1,14 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.VBox?>
 
-<AnchorPane xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller="$CONTROLLER_NAME$"
-            prefHeight="400.0" prefWidth="600.0" >
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.example.batallanaval.controller.StartController"
+      stylesheets="@../css/styles.css"
+      styleClass="root-container"
+      alignment="CENTER"
+      spacing="20"
+      prefWidth="500"
+      prefHeight="450">
 
-</AnchorPane>
+    <padding>
+        <Insets top="40" bottom="40" left="40" right="40"/>
+    </padding>
+
+    <!-- ============== TITLE ============== -->
+    <Label text="Batalla Naval" styleClass="main-title"/>
+    <Label text="Universidad del Valle - Fundamentos de POE" styleClass="subtitle"/>
+
+    <!-- ============== NICKNAME INPUT ============== -->
+    <Label text="Ingresa tu nickname:" styleClass="instruction"/>
+    <TextField fx:id="nicknameField" promptText="Tu nickname"
+               styleClass="nickname-field" maxWidth="250"/>
+
+    <!-- ============== ACTION BUTTONS ============== -->
+    <Button fx:id="newGameButton" text="Nuevo Juego"
+            styleClass="primary-button" prefWidth="200" prefHeight="45"/>
+    <Button fx:id="continueButton" text="Continuar"
+            styleClass="secondary-button" prefWidth="200" prefHeight="40"/>
+
+    <!-- ============== STATUS LABEL ============== -->
+    <Label fx:id="statusLabel" text="Ingresa tu nickname y elige una opcion."
+           styleClass="status" wrapText="true"/>
+
+</VBox>
