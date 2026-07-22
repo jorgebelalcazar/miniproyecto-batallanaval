@@ -1,5 +1,7 @@
 package com.example.batallanaval.controller;
 
+import com.example.batallanaval.concurrency.GameTimer;
+import com.example.batallanaval.concurrency.MachineTurnService;
 import com.example.batallanaval.model.Board;
 import com.example.batallanaval.model.Coordinate;
 import com.example.batallanaval.model.Player;
@@ -9,6 +11,7 @@ import com.example.batallanaval.service.RandomFleetPlacer;
 import com.example.batallanaval.strategy.RandomShootingStrategy;
 import com.example.batallanaval.view.BoardView;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -17,15 +20,17 @@ import javafx.scene.layout.StackPane;
 /**
  * Controller for the game screen. It connects the model ({@link GameManager}) with the
  * two {@link BoardView}s: it builds the boards, forwards the human's clicks as shots
- * (HU-2), redraws after each shot, runs the machine's response, and updates the status.
+ * (HU-2), redraws after each shot, runs the machine's response on a background thread
+ * and a game timer on a second thread (criterion 7), and updates the status.
  * <p>
- * In this first version both fleets are placed randomly so shooting can be tested
- * end to end. Manual human placement (HU-1) replaces the random human fleet next.
+ * In this version both fleets are placed randomly so shooting can be tested end to end.
+ * Manual human placement (HU-1) replaces the random human fleet in a later phase.
  *
  */
 public class GameController {
 
     @FXML private Label statusLabel;
+    @FXML private Label timerLabel;
     @FXML private StackPane positionBoardContainer;
     @FXML private StackPane mainBoardContainer;
     @FXML private Button revealButton;
@@ -34,6 +39,9 @@ public class GameController {
     private BoardView positionBoardView;  // human's own board (ships visible)
     private BoardView mainBoardView;      // enemy board (ships hidden)
     private boolean enemyRevealed;
+
+    private MachineTurnService machineTurnService;  // first thread
+    private GameTimer gameTimer;                    // second thread
 
     /**
      * Called automatically by JavaFX after the FXML is loaded. Sets up a new game.
@@ -44,7 +52,8 @@ public class GameController {
     }
 
     /**
-     * Builds a fresh game with both fleets placed randomly and wires the boards.
+     * Builds a fresh game with both fleets placed randomly and wires the boards, the
+     * background machine-turn service and the game timer.
      *
      * @param nickname the human player's nickname
      */
@@ -65,8 +74,38 @@ public class GameController {
         positionBoardContainer.getChildren().setAll(positionBoardView);
         mainBoardContainer.getChildren().setAll(mainBoardView);
 
+        // First thread: background service for the machine's turn (criterion 7).
+        machineTurnService = new MachineTurnService(game);
+        // The callback runs on a BACKGROUND thread, so every UI update goes through
+        // Platform.runLater to reach the JavaFX Application Thread safely.
+        machineTurnService.setOnShot(result -> Platform.runLater(() -> {
+            refreshBoards();
+            showShotMessage("La maquina disparo", result);
+            if (game.isGameOver()) {
+                announceWinner();
+            }
+        }));
+
+        // Second thread: the game timer, running in parallel (criterion 7).
+        startTimer();
+
         refreshBoards();
         statusLabel.setText("Tu turno: dispara en el tablero principal.");
+    }
+
+    /**
+     * Starts (or restarts) the game timer on its own daemon thread, binding the timer
+     * label to its message property so UI updates are delivered safely.
+     */
+    private void startTimer() {
+        if (gameTimer != null) {
+            gameTimer.cancel();                 // stop a previous game's timer
+        }
+        gameTimer = new GameTimer();
+        timerLabel.textProperty().bind(gameTimer.messageProperty());
+        Thread timerThread = new Thread(gameTimer);
+        timerThread.setDaemon(true);            // do not block app exit
+        timerThread.start();
     }
 
     /**
@@ -93,28 +132,19 @@ public class GameController {
             return;
         }
 
-        // If the shot was water, the turn passed to the machine: let it play.
+        // If the shot was water, the turn passed to the machine: let it play in the
+        // background so the UI does not freeze.
         if (game.getCurrentTurn() == Player.MACHINE) {
             playMachineTurn();
         }
     }
 
     /**
-     * Runs the machine's turn: it keeps shooting while it hits, until it misses or wins.
-     * <p>
-     * NOTE: for now this runs on the UI thread, so the window pauses briefly. In the
-     * threads phase (criterion 7) this moves to a background thread with small delays
-     * so it feels natural and never freezes the interface.
+     * Starts the machine's turn on a background thread (criterion 7). Using restart()
+     * lets us reuse the same service on every machine turn.
      */
     private void playMachineTurn() {
-        while (game.getCurrentTurn() == Player.MACHINE && !game.isGameOver()) {
-            ShotResult result = game.machineShoot();
-            refreshBoards();
-            showShotMessage("La maquina disparo", result);
-        }
-        if (game.isGameOver()) {
-            announceWinner();
-        }
+        machineTurnService.restart();
     }
 
     /**
@@ -144,6 +174,9 @@ public class GameController {
     }
 
     private void announceWinner() {
+        if (gameTimer != null) {
+            gameTimer.cancel();             // stop the clock when the game ends
+        }
         String winner = game.getWinner() == Player.HUMAN ? "Ganaste!" : "Gano la maquina.";
         statusLabel.setText("Fin del juego. " + winner);
     }
