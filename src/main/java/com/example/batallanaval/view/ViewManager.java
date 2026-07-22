@@ -10,48 +10,32 @@ import java.net.URL;
 import java.util.function.Consumer;
 
 /**
- * Centralized manager responsible for loading FXML views and swapping
- * scenes on the primary stage.
+ * Centralized manager responsible for loading FXML views and swapping scenes on the
+ * primary stage. It is the single point of contact with the JavaFX {@link Stage}.
  * <p>
- * This class is the single point of contact with the JavaFX {@link Stage}.
- * No controller, model or other view touches the stage directly; instead,
- * they request screen changes through this manager. This keeps navigation
- * logic in one place and guarantees the stage is always loaded consistently.
- * </p>
- *
- * <p>The class follows the Singleton pattern. Note: for the design-pattern
- * rubric requirement, the project's primary declared pattern is the Factory
- * Method (used to create ships); this Singleton is a supporting pattern.</p>
+ * Follows the Singleton pattern (a supporting pattern; the project's primary declared
+ * pattern is the Factory used to create ships).
  *
  */
 public final class ViewManager {
 
-    /** Title shown in the application window. */
     private static final String WINDOW_TITLE = "Batalla Naval - Universidad del Valle";
 
-    /** Classpath location of the start view. */
     private static final String START_VIEW_PATH =
             "/com/example/batallanaval/view/start-view.fxml";
-
-    /** Classpath location of the game view. */
     private static final String GAME_VIEW_PATH =
             "/com/example/batallanaval/view/game-view.fxml";
+    private static final String PLACEMENT_VIEW_PATH =
+            "/com/example/batallanaval/view/placement-view.fxml";
 
-    /** The single shared instance of this manager. */
     private static final ViewManager INSTANCE = new ViewManager();
 
-    /** The primary stage provided by the JavaFX runtime. */
     private Stage primaryStage;
 
-    /**
-     * Private constructor to enforce the Singleton pattern.
-     */
     private ViewManager() {
     }
 
     /**
-     * Returns the single shared instance of the view manager.
-     *
      * @return the shared {@code ViewManager} instance
      */
     public static ViewManager getInstance() {
@@ -70,16 +54,26 @@ public final class ViewManager {
     }
 
     /**
-     * Loads and displays the start view, where the player enters a nickname
-     * and chooses to start a new game or continue a saved one.
+     * Loads and displays the start view.
      */
     public void showStartView() {
         swapScene(START_VIEW_PATH);
     }
 
     /**
+     * Loads and displays the manual placement view, running the given initialization
+     * action on its controller (for example, to pass the player's nickname).
+     *
+     * @param controllerInit action to run on the loaded controller before showing it
+     * @param <T>            the controller type of the placement view
+     */
+    public <T> void showPlacementView(Consumer<T> controllerInit) {
+        swapScene(PLACEMENT_VIEW_PATH, controllerInit);
+    }
+
+    /**
      * Loads and displays the game view, running the given initialization action on its
-     * controller (for example, to start a new game or resume a saved one).
+     * controller (start a new game or resume a saved one).
      *
      * @param controllerInit action to run on the loaded controller before showing it
      * @param <T>            the controller type of the game view
@@ -89,24 +83,18 @@ public final class ViewManager {
     }
 
     /**
-     * Loads the FXML at the given classpath path and sets it as the current
-     * scene, with no controller initialization.
-     *
-     * @param fxmlPath the absolute classpath path of the FXML to load
-     * @throws IllegalStateException if the FXML cannot be located or loaded
+     * Loads the FXML at the given path with no controller initialization.
      */
     private void swapScene(String fxmlPath) {
         swapScene(fxmlPath, null);
     }
 
     /**
-     * Loads the FXML at the given classpath path, optionally runs an initialization
-     * action on its controller, and sets it as the current scene. Fails fast with a
-     * descriptive message if the resource is missing.
+     * Loads the FXML at the given path, optionally runs an initialization action on
+     * its controller, and sets it as the current scene.
      *
      * @param fxmlPath       the absolute classpath path of the FXML to load
-     * @param controllerInit optional action to run on the loaded controller; may be
-     *                       {@code null}
+     * @param controllerInit optional action to run on the loaded controller; may be null
      * @param <T>            the controller type
      * @throws IllegalStateException if the FXML cannot be located or loaded
      */
@@ -114,8 +102,7 @@ public final class ViewManager {
         URL resourceUrl = ViewManager.class.getResource(fxmlPath);
         if (resourceUrl == null) {
             throw new IllegalStateException(
-                    "No se pudo encontrar el archivo FXML en: " + fxmlPath
-            );
+                    "No se pudo encontrar el archivo FXML en: " + fxmlPath);
         }
 
         try {
@@ -133,8 +120,7 @@ public final class ViewManager {
             primaryStage.show();
         } catch (IOException e) {
             throw new IllegalStateException(
-                    "No se pudo cargar la vista: " + fxmlPath, e
-            );
+                    "No se pudo cargar la vista: " + fxmlPath, e);
         }
     }
 }
