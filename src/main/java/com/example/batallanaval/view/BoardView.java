@@ -1,7 +1,9 @@
 package com.example.batallanaval.view;
 
 import com.example.batallanaval.model.Board;
+import com.example.batallanaval.model.CellState;
 import com.example.batallanaval.model.Coordinate;
+import com.example.batallanaval.model.Ship;
 
 import javafx.scene.control.Label;
 import javafx.scene.input.TransferMode;
@@ -14,8 +16,8 @@ import java.util.function.Consumer;
 
 /**
  * Renders a full 10x10 board as a grid of {@link CellView} objects, with column
- * labels (A-J) and row labels (1-10). It reports clicks and drag events (as
- * {@link Coordinate}s) to listeners, but it does not know the game rules.
+ * labels (A-J) and row labels (1-10). It reports clicks and drag events and, for
+ * visible ships, connects contiguous hull cells so ships look like one piece.
  *
  */
 public class BoardView extends GridPane {
@@ -25,8 +27,8 @@ public class BoardView extends GridPane {
     private final Map<Coordinate, CellView> cellViews;
     private boolean revealShips;
     private Consumer<Coordinate> onCellClick;
-    private Consumer<Coordinate> onCellDragOver;      // NEW: drag hovering over a cell
-    private Consumer<Coordinate> onCellDragDropped;   // NEW: drop released on a cell
+    private Consumer<Coordinate> onCellDragOver;
+    private Consumer<Coordinate> onCellDragDropped;
 
     /**
      * Builds an empty board view (all water) with its labels.
@@ -71,19 +73,16 @@ public class BoardView extends GridPane {
                     }
                 });
 
-                // Allow this cell to be a drop target and report the hover.
                 cellView.setOnDragOver(event -> {
                     if (onCellDragOver != null) {
                         onCellDragOver.accept(coordinate);
                     }
-                    // Accept the move so the drop event can fire.
                     if (event.getGestureSource() != null) {
                         event.acceptTransferModes(TransferMode.MOVE);
                     }
                     event.consume();
                 });
 
-                // Report a drop released on this cell.
                 cellView.setOnDragDropped(event -> {
                     if (onCellDragDropped != null) {
                         onCellDragDropped.accept(coordinate);
@@ -99,19 +98,61 @@ public class BoardView extends GridPane {
     }
 
     /**
-     * Redraws every cell to match the given board's current state.
+     * Redraws every cell to match the given board's current state, connecting the
+     * hulls of visible multi-cell ships.
      *
      * @param board the model board to reflect
      */
     public void render(Board board) {
         for (Map.Entry<Coordinate, CellView> entry : cellViews.entrySet()) {
             Coordinate coordinate = entry.getKey();
-            entry.getValue().render(board.getCellState(coordinate), revealShips);
+            CellState state = board.getCellState(coordinate);
+            CellView.HullConnections connections =
+                    connectionsFor(board, coordinate, state);
+            entry.getValue().render(state, revealShips, connections);
         }
     }
 
     /**
-     * Sets the listener invoked when the user clicks a cell (HU-2).
+     * Computes which sides of a cell connect to the same ship, so its hull can be drawn
+     * continuously. Returns NONE for water, or when ships are hidden (so the enemy
+     * fleet shape is never revealed through the hull connections).
+     */
+    private CellView.HullConnections connectionsFor(
+            Board board, Coordinate coordinate, CellState state) {
+
+        boolean isShip = state == CellState.SHIP
+                || state == CellState.HIT
+                || state == CellState.SUNK;
+        if (!isShip || !revealShips) {
+            return CellView.HullConnections.NONE;
+        }
+
+        Ship ship = findShipAt(board, coordinate);
+        if (ship == null) {
+            return CellView.HullConnections.NONE;
+        }
+
+        int r = coordinate.getRow();
+        int col = coordinate.getColumn();
+        return new CellView.HullConnections(
+                ship.occupies(new Coordinate(r - 1, col)),   // top
+                ship.occupies(new Coordinate(r + 1, col)),   // bottom
+                ship.occupies(new Coordinate(r, col - 1)),   // left
+                ship.occupies(new Coordinate(r, col + 1)));  // right
+    }
+
+    private Ship findShipAt(Board board, Coordinate coordinate) {
+        for (Ship ship : board.getFleet()) {
+            if (ship.occupies(coordinate)) {
+                return ship;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Sets the click listener (HU-2).
      *
      * @param onCellClick the click listener
      */
@@ -120,7 +161,7 @@ public class BoardView extends GridPane {
     }
 
     /**
-     * Sets the listener invoked while a drag hovers over a cell (HU-1 placement).
+     * Sets the drag-over listener (HU-1 placement).
      *
      * @param onCellDragOver the drag-over listener
      */
@@ -129,7 +170,7 @@ public class BoardView extends GridPane {
     }
 
     /**
-     * Sets the listener invoked when a drag is dropped on a cell (HU-1 placement).
+     * Sets the drop listener (HU-1 placement).
      *
      * @param onCellDragDropped the drop listener
      */
@@ -138,7 +179,7 @@ public class BoardView extends GridPane {
     }
 
     /**
-     * Changes whether ships are drawn visible and redraws (HU-3).
+     * Changes ship visibility and redraws (HU-3).
      *
      * @param revealShips the new visibility for ship cells
      * @param board       the board to redraw with the new setting
