@@ -1,76 +1,95 @@
 package com.example.batallanaval.controller;
 
+import com.example.batallanaval.persistence.PersistenceService;
+import com.example.batallanaval.service.GameManager;
+
 import javafx.fxml.FXML;
-import javafx.fxml.Initializable;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.stage.Stage;
 
-import java.net.URL;
-import java.util.ResourceBundle;
+import java.io.IOException;
+import java.util.Optional;
+import java.util.function.Consumer;
 
 /**
- * Controller for the start view, where the player enters a nickname and
- * chooses to start a new game or continue a previously saved one.
+ * Controller for the start screen (nickname + New Game / Continue).
  * <p>
- * This controller belongs to the controller layer of the MVC architecture.
- * In this phase it validates the nickname and reports the chosen action;
- * navigation to the game view and loading saved games are wired in later
- * phases.
- * </p>
+ * "New Game" opens the game screen and starts a fresh game with the entered nickname.
+ * "Continue" loads the most recent saved game and resumes it exactly (HU-5). If there
+ * is no saved game, the Continue button is disabled.
  *
  */
-public class StartController implements Initializable {
+public class StartController {
 
-    /** Text field where the player types a nickname. */
-    @FXML
-    private TextField nicknameField;
+    @FXML private TextField nicknameField;
+    @FXML private Button newGameButton;
+    @FXML private Button continueButton;
+    @FXML private Label statusLabel;
 
-    /** Button that starts a brand-new game. */
-    @FXML
-    private Button newGameButton;
-
-    /** Button that continues a previously saved game. */
-    @FXML
-    private Button continueButton;
-
-    /** Label used to display validation or status messages. */
-    @FXML
-    private Label statusLabel;
+    private final PersistenceService persistence = new PersistenceService();
 
     /**
-     * Initialization callback invoked after the FXML view is loaded. Wires
-     * the button actions.
-     *
-     * @param location  the FXML location (unused)
-     * @param resources the resource bundle (unused)
+     * Wires the buttons and disables "Continue" when there is no saved game.
      */
-    @Override
-    public void initialize(URL location, ResourceBundle resources) {
-        newGameButton.setOnAction(event -> handleNewGame());
-        continueButton.setOnAction(event -> handleContinue());
+    @FXML
+    public void initialize() {
+        newGameButton.setOnAction(event -> onNewGame());
+        continueButton.setOnAction(event -> onContinue());
+        continueButton.setDisable(!persistence.hasSavedGame());
     }
 
     /**
-     * Handles the "new game" action: validates the nickname and, in later
-     * phases, requests the game view. For now it reports the chosen action.
+     * Starts a brand new game, requiring a non-empty nickname (HU-5 base).
      */
-    private void handleNewGame() {
-        String nickname = nicknameField.getText();
-        if (nickname == null || nickname.isBlank()) {
-            statusLabel.setText("Por favor ingresa un nickname para continuar.");
+    private void onNewGame() {
+        String nickname = nicknameField.getText().trim();
+        if (nickname.isEmpty()) {
+            statusLabel.setText("Por favor ingresa un nickname.");
             return;
         }
-        statusLabel.setText("Nuevo juego para: " + nickname.trim()
-                + ". (La pantalla de juego se implementara en la siguiente fase.)");
+        openGameScreen(controller -> controller.startNewGame(nickname));
     }
 
     /**
-     * Handles the "continue" action: in later phases it will load the most
-     * recent saved game. For now it reports the action as a placeholder.
+     * Loads the most recent saved game and resumes it (HU-5).
      */
-    private void handleContinue() {
-        statusLabel.setText("Continuar partida guardada. "
-                + "(La carga de guardado se implementara en la fase de persistencia.)");
+    private void onContinue() {
+        try {
+            Optional<GameManager> saved = persistence.loadGame();
+            if (saved.isEmpty()) {
+                statusLabel.setText("No hay ninguna partida guardada.");
+                return;
+            }
+            openGameScreen(controller -> controller.resumeGame(saved.get()));
+        } catch (IOException | ClassNotFoundException e) {
+            statusLabel.setText("No se pudo cargar la partida guardada.");
+        }
+    }
+
+    /**
+     * Loads the game view, obtains its controller, lets the caller initialize it
+     * (new game or resume), and swaps the current scene to the game screen.
+     *
+     * @param init action that starts or resumes the game on the game controller
+     */
+    private void openGameScreen(Consumer<GameController> init) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(
+                    "/com/example/batallanaval/view/game-view.fxml"));
+            Parent root = loader.load();
+
+            GameController controller = loader.getController();
+            init.accept(controller);   // startNewGame(nickname) or resumeGame(savedGame)
+
+            Stage stage = (Stage) newGameButton.getScene().getWindow();
+            stage.setScene(new Scene(root));
+        } catch (IOException e) {
+            statusLabel.setText("No se pudo abrir la pantalla de juego.");
+        }
     }
 }
