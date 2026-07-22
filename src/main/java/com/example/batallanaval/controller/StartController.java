@@ -2,26 +2,23 @@ package com.example.batallanaval.controller;
 
 import com.example.batallanaval.persistence.PersistenceService;
 import com.example.batallanaval.service.GameManager;
+import com.example.batallanaval.view.ViewManager;
 
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.util.Optional;
-import java.util.function.Consumer;
 
 /**
  * Controller for the start screen (nickname + New Game / Continue).
  * <p>
  * "New Game" opens the game screen and starts a fresh game with the entered nickname.
  * "Continue" loads the most recent saved game and resumes it exactly (HU-5). If there
- * is no saved game, the Continue button is disabled.
+ * is no saved game, the Continue button is disabled. All navigation goes through the
+ * {@link ViewManager}.
  *
  */
 public class StartController {
@@ -52,7 +49,8 @@ public class StartController {
             statusLabel.setText("Por favor ingresa un nickname.");
             return;
         }
-        openGameScreen(controller -> controller.startNewGame(nickname));
+        ViewManager.getInstance().showGameView(
+                (GameController controller) -> controller.startNewGame(nickname));
     }
 
     /**
@@ -65,31 +63,10 @@ public class StartController {
                 statusLabel.setText("No hay ninguna partida guardada.");
                 return;
             }
-            openGameScreen(controller -> controller.resumeGame(saved.get()));
+            ViewManager.getInstance().showGameView(
+                    (GameController controller) -> controller.resumeGame(saved.get()));
         } catch (IOException | ClassNotFoundException e) {
             statusLabel.setText("No se pudo cargar la partida guardada.");
-        }
-    }
-
-    /**
-     * Loads the game view, obtains its controller, lets the caller initialize it
-     * (new game or resume), and swaps the current scene to the game screen.
-     *
-     * @param init action that starts or resumes the game on the game controller
-     */
-    private void openGameScreen(Consumer<GameController> init) {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource(
-                    "/com/example/batallanaval/view/game-view.fxml"));
-            Parent root = loader.load();
-
-            GameController controller = loader.getController();
-            init.accept(controller);   // startNewGame(nickname) or resumeGame(savedGame)
-
-            Stage stage = (Stage) newGameButton.getScene().getWindow();
-            stage.setScene(new Scene(root));
-        } catch (IOException e) {
-            statusLabel.setText("No se pudo abrir la pantalla de juego.");
         }
     }
 }
