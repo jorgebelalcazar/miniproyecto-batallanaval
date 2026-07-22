@@ -27,9 +27,8 @@ import java.io.IOException;
  * and a game timer on a second thread (criterion 7), auto-saves after every play and
  * can resume a saved game (HU-5), and updates the status.
  * <p>
- * The game is started by the start screen, which calls {@link #startNewGame(String)}
- * or {@link #resumeGame(GameManager)}. In a new game both fleets are placed randomly.
- * Manual human placement (HU-1) replaces the random human fleet in a later phase.
+ * The game is started by the start/placement screens, which call one of the
+ * {@code startNewGame} overloads or {@link #resumeGame(GameManager)}.
  *
  */
 public class GameController {
@@ -52,27 +51,35 @@ public class GameController {
 
     /**
      * Called automatically by JavaFX after the FXML is loaded. The actual game is
-     * started by the start screen, which calls startNewGame or resumeGame.
+     * started by the start/placement screens.
      */
     @FXML
     public void initialize() {
-        // Intentionally empty: the start screen decides new game vs. resume.
+        // Intentionally empty: the start/placement screens decide how to start.
     }
 
     /**
-     * Builds and starts a fresh game with both fleets placed randomly.
+     * Starts a new game using a human board already populated by the player (HU-1).
+     * The machine board is generated randomly.
      *
-     * @param nickname the human player's nickname
+     * @param nickname   the player's nickname
+     * @param humanBoard the board the player filled in during placement
      */
-    public void startNewGame(String nickname) {
-        RandomFleetPlacer placer = new RandomFleetPlacer();
-        Board humanBoard = placer.createBoardWithRandomFleet();
-        Board machineBoard = placer.createBoardWithRandomFleet();
-
+    public void startNewGame(String nickname, Board humanBoard) {
+        Board machineBoard = new RandomFleetPlacer().createBoardWithRandomFleet();
         this.game = new GameManager(
                 nickname, humanBoard, machineBoard, new RandomShootingStrategy());
-
         wireGame();
+    }
+
+    /**
+     * Starts a new game with both fleets placed randomly (kept as a fallback).
+     *
+     * @param nickname the player's nickname
+     */
+    public void startNewGame(String nickname) {
+        Board humanBoard = new RandomFleetPlacer().createBoardWithRandomFleet();
+        startNewGame(nickname, humanBoard);
     }
 
     /**
@@ -87,12 +94,11 @@ public class GameController {
 
     /**
      * Wires the current {@code game} to the views, the threads and the click handlers.
-     * Shared by both a new game and a resumed one.
+     * Shared by a new game and a resumed one.
      */
     private void wireGame() {
         this.enemyRevealed = false;
 
-        // Human board: ships visible. Enemy board: ships hidden, clickable to shoot.
         positionBoardView = new BoardView(true);
         mainBoardView = new BoardView(false);
         mainBoardView.setOnCellClick(this::handleHumanShot);
@@ -102,8 +108,6 @@ public class GameController {
 
         // First thread: background service for the machine's turn (criterion 7).
         machineTurnService = new MachineTurnService(game);
-        // The callback runs on a BACKGROUND thread, so every UI update goes through
-        // Platform.runLater to reach the JavaFX Application Thread safely.
         machineTurnService.setOnShot(result -> Platform.runLater(() -> {
             refreshBoards();
             showShotMessage("La maquina disparo", result);
@@ -133,13 +137,13 @@ public class GameController {
      */
     private void startTimer() {
         if (gameTimer != null) {
-            gameTimer.cancel();                 // stop a previous game's timer
+            gameTimer.cancel();
         }
         gameTimer = new GameTimer();
-        timerLabel.textProperty().unbind();     // in case it was bound before
+        timerLabel.textProperty().unbind();
         timerLabel.textProperty().bind(gameTimer.messageProperty());
         Thread timerThread = new Thread(gameTimer);
-        timerThread.setDaemon(true);            // do not block app exit
+        timerThread.setDaemon(true);
         timerThread.start();
     }
 
@@ -147,7 +151,6 @@ public class GameController {
      * Handles a click on the enemy board: the human shoots at that coordinate (HU-2).
      */
     private void handleHumanShot(Coordinate coordinate) {
-        // Ignore clicks when it is not the human's turn or the game ended.
         if (game.isGameOver() || game.getCurrentTurn() != Player.HUMAN) {
             return;
         }
@@ -158,7 +161,6 @@ public class GameController {
             showShotMessage("Disparaste", result);
             autoSave();                 // HU-5: save after the human's play
         } catch (IllegalStateException alreadyShot) {
-            // Cell already fired at: tell the user and let them pick another.
             statusLabel.setText("Ya disparaste ahi. Elige otra casilla.");
             return;
         }
@@ -168,16 +170,13 @@ public class GameController {
             return;
         }
 
-        // If the shot was water, the turn passed to the machine: let it play in the
-        // background so the UI does not freeze.
         if (game.getCurrentTurn() == Player.MACHINE) {
             playMachineTurn();
         }
     }
 
     /**
-     * Starts the machine's turn on a background thread (criterion 7). Using restart()
-     * lets us reuse the same service on every machine turn.
+     * Starts the machine's turn on a background thread (criterion 7).
      */
     private void playMachineTurn() {
         machineTurnService.restart();
@@ -196,8 +195,7 @@ public class GameController {
     }
 
     /**
-     * Saves the game after every play (HU-5). A disk failure only shows a message; it
-     * never interrupts the game.
+     * Saves the game after every play (HU-5). A disk failure only shows a message.
      */
     private void autoSave() {
         try {
@@ -223,7 +221,7 @@ public class GameController {
 
     private void announceWinner() {
         if (gameTimer != null) {
-            gameTimer.cancel();             // stop the clock when the game ends
+            gameTimer.cancel();
         }
         String winner = game.getWinner() == Player.HUMAN ? "Ganaste!" : "Gano la maquina.";
         statusLabel.setText("Fin del juego. " + winner);
