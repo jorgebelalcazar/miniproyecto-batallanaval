@@ -11,6 +11,7 @@ import com.example.batallanaval.service.GameManager;
 import com.example.batallanaval.service.RandomFleetPlacer;
 import com.example.batallanaval.strategy.RandomShootingStrategy;
 import com.example.batallanaval.view.BoardView;
+import com.example.batallanaval.view.ViewManager;
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -25,7 +26,8 @@ import java.io.IOException;
  * two {@link BoardView}s: it builds the boards, forwards the human's clicks as shots
  * (HU-2), redraws after each shot, runs the machine's response on a background thread
  * and a game timer on a second thread (criterion 7), auto-saves after every play and
- * can resume a saved game (HU-5), and updates the status.
+ * can resume a saved game (HU-5), offers a "back to menu" control (usability,
+ * criterion 1), and updates the status.
  * <p>
  * The game is started by the start/placement screens, which call one of the
  * {@code startNewGame} overloads or {@link #resumeGame(GameManager)}.
@@ -38,6 +40,7 @@ public class GameController {
     @FXML private StackPane positionBoardContainer;
     @FXML private StackPane mainBoardContainer;
     @FXML private Button revealButton;
+    @FXML private Button backButton;
 
     private final PersistenceService persistence = new PersistenceService();
 
@@ -192,6 +195,19 @@ public class GameController {
         revealButton.setText(enemyRevealed
                 ? "Ocultar flota enemiga"
                 : "Mostrar flota enemiga (verificacion)");
+    }
+
+    /**
+     * Returns to the start menu (user control and freedom heuristic, criterion 1). The
+     * game timer is stopped and the auto-saved game remains on disk, so the player can
+     * resume later with "Continuar".
+     */
+    @FXML
+    private void onBackToMenu() {
+        if (gameTimer != null) {
+            gameTimer.cancel();        // stop the background timer thread
+        }
+        ViewManager.getInstance().showStartView();
     }
 
     /**
