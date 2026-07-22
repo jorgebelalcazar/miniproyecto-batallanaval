@@ -10,6 +10,7 @@ import com.example.batallanaval.model.ShipType;
 import com.example.batallanaval.service.RandomFleetPlacer;
 import com.example.batallanaval.view.BoardView;
 import com.example.batallanaval.view.DraggableShip;
+import com.example.batallanaval.view.ViewManager;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -44,7 +45,7 @@ public class PlacementController {
     private Orientation currentOrientation = Orientation.HORIZONTAL;
     private String nickname = "Player";
 
-    private DraggableShip shipBeingDragged;   // the tray ship currently being dragged
+    private DraggableShip shipBeingDragged;
 
     /**
      * Sets the nickname carried over from the start screen.
@@ -66,7 +67,6 @@ public class PlacementController {
         boardView.render(board);
         boardContainer.getChildren().setAll(boardView);
 
-        // The board reports drag-over (for preview) and drop (to place the ship).
         boardView.setOnCellDragDropped(this::handleDropAt);
 
         fillTray();
@@ -88,15 +88,13 @@ public class PlacementController {
     }
 
     /**
-     * Turns a tray ship into a drag source: starting a drag records which ship is
-     * moving so the drop handler knows what to place.
+     * Turns a tray ship into a drag source.
      */
     private void makeDraggable(DraggableShip ship) {
         ship.setOnDragDetected(event -> {
             shipBeingDragged = ship;
             Dragboard dragboard = ship.startDragAndDrop(TransferMode.MOVE);
             ClipboardContent content = new ClipboardContent();
-            // The content is required by JavaFX, but we track the ship in a field.
             content.putString(ship.getShipType().name());
             dragboard.setContent(content);
             event.consume();
@@ -104,9 +102,7 @@ public class PlacementController {
     }
 
     /**
-     * Handles a ship dropped at the given starting coordinate. Builds the ship with the
-     * current orientation and tries to place it; on success it is drawn and removed from
-     * the tray, otherwise a message is shown (HU-1 validation).
+     * Handles a ship dropped at the given starting coordinate (HU-1 validation).
      */
     private void handleDropAt(Coordinate start) {
         if (shipBeingDragged == null) {
@@ -116,9 +112,9 @@ public class PlacementController {
         Ship ship = shipFactory.createShip(type, start, currentOrientation);
 
         try {
-            board.placeShip(ship);              // validates overlap and bounds (HU-1)
-            boardView.render(board);            // draw the placed ship
-            shipTray.getChildren().remove(shipBeingDragged);  // remove from tray
+            board.placeShip(ship);
+            boardView.render(board);
+            shipTray.getChildren().remove(shipBeingDragged);
             statusLabel.setText("Barco colocado: " + type + ".");
             checkFleetComplete();
         } catch (InvalidPlacementException e) {
@@ -139,8 +135,7 @@ public class PlacementController {
     }
 
     /**
-     * Toggles the orientation used when a ship is dropped, reflected in the tray and
-     * the button label.
+     * Toggles the orientation used when a ship is dropped.
      */
     @FXML
     private void onRotate() {
@@ -157,23 +152,25 @@ public class PlacementController {
     }
 
     /**
-     * Places the whole fleet randomly as a shortcut, clearing the tray (safety net).
+     * Places the whole fleet randomly as a shortcut (safety net).
      */
     @FXML
     private void onRandom() {
         board = new RandomFleetPlacer().createBoardWithRandomFleet();
         boardView.render(board);
-        boardView.setOnCellDragDropped(this::handleDropAt); // keep target on new board
+        boardView.setOnCellDragDropped(this::handleDropAt);
         shipTray.getChildren().clear();
         startButton.setDisable(false);
         statusLabel.setText("Flota colocada aleatoriamente. Pulsa 'Empezar partida'.");
     }
 
     /**
-     * Placeholder: wired in step 3 (start the game with the placed fleet).
+     * Starts the game with the fleet the player has placed (HU-1), navigating to the
+     * game screen through the ViewManager.
      */
     @FXML
     private void onStart() {
-        statusLabel.setText("Empezar partida se conecta en el paso 3.");
+        ViewManager.getInstance().showGameView(
+                (GameController controller) -> controller.startNewGame(nickname, board));
     }
 }
