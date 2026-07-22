@@ -15,8 +15,8 @@ import java.util.Optional;
 /**
  * Controller for the start screen (nickname + New Game / Continue).
  * <p>
- * "New Game" opens the game screen and starts a fresh game with the entered nickname.
- * "Continue" loads the most recent saved game and resumes it exactly (HU-5). If there
+ * "New Game" opens the manual placement screen so the player positions the fleet
+ * (HU-1). "Continue" loads the most recent saved game and resumes it (HU-5). If there
  * is no saved game, the Continue button is disabled. All navigation goes through the
  * {@link ViewManager}.
  *
@@ -41,7 +41,7 @@ public class StartController {
     }
 
     /**
-     * Starts a brand new game, requiring a non-empty nickname (HU-5 base).
+     * Opens the manual placement screen so the player can position the fleet (HU-1).
      */
     private void onNewGame() {
         String nickname = nicknameField.getText().trim();
@@ -49,8 +49,8 @@ public class StartController {
             statusLabel.setText("Por favor ingresa un nickname.");
             return;
         }
-        ViewManager.getInstance().showGameView(
-                (GameController controller) -> controller.startNewGame(nickname));
+        ViewManager.getInstance().showPlacementView(
+                (PlacementController controller) -> controller.setNickname(nickname));
     }
 
     /**
