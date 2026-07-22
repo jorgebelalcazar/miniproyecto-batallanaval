@@ -24,10 +24,11 @@ import java.io.IOException;
  * Controller for the game screen. It connects the model ({@link GameManager}) with the
  * two {@link BoardView}s: it builds the boards, forwards the human's clicks as shots
  * (HU-2), redraws after each shot, runs the machine's response on a background thread
- * and a game timer on a second thread (criterion 7), auto-saves after every play
- * (HU-5), and updates the status.
+ * and a game timer on a second thread (criterion 7), auto-saves after every play and
+ * can resume a saved game (HU-5), and updates the status.
  * <p>
- * In this version both fleets are placed randomly so shooting can be tested end to end.
+ * The game is started by the start screen, which calls {@link #startNewGame(String)}
+ * or {@link #resumeGame(GameManager)}. In a new game both fleets are placed randomly.
  * Manual human placement (HU-1) replaces the random human fleet in a later phase.
  *
  */
@@ -50,16 +51,16 @@ public class GameController {
     private GameTimer gameTimer;                    // second thread
 
     /**
-     * Called automatically by JavaFX after the FXML is loaded. Sets up a new game.
+     * Called automatically by JavaFX after the FXML is loaded. The actual game is
+     * started by the start screen, which calls startNewGame or resumeGame.
      */
     @FXML
     public void initialize() {
-        startNewGame("Player");
+        // Intentionally empty: the start screen decides new game vs. resume.
     }
 
     /**
-     * Builds a fresh game with both fleets placed randomly and wires the boards, the
-     * background machine-turn service and the game timer.
+     * Builds and starts a fresh game with both fleets placed randomly.
      *
      * @param nickname the human player's nickname
      */
@@ -71,6 +72,16 @@ public class GameController {
         this.game = new GameManager(
                 nickname, humanBoard, machineBoard, new RandomShootingStrategy());
 
+        wireGame();
+    }
+
+    /**
+     * Resumes a previously saved game, restoring its exact state (HU-5).
+     *
+     * @param savedGame the game loaded from disk
+     */
+    public void resumeGame(GameManager savedGame) {
+        this.game = savedGame;
         wireGame();
     }
 
@@ -106,7 +117,14 @@ public class GameController {
         startTimer();
 
         refreshBoards();
-        statusLabel.setText("Tu turno: dispara en el tablero principal.");
+
+        // If we resumed mid-machine-turn, let the machine continue playing.
+        if (!game.isGameOver() && game.getCurrentTurn() == Player.MACHINE) {
+            playMachineTurn();
+            statusLabel.setText("Turno de la maquina...");
+        } else {
+            statusLabel.setText("Tu turno: dispara en el tablero principal.");
+        }
     }
 
     /**
