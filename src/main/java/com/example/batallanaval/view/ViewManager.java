@@ -7,6 +7,7 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.function.Consumer;
 
 /**
  * Centralized manager responsible for loading FXML views and swapping
@@ -31,6 +32,10 @@ public final class ViewManager {
     /** Classpath location of the start view. */
     private static final String START_VIEW_PATH =
             "/com/example/batallanaval/view/start-view.fxml";
+
+    /** Classpath location of the game view. */
+    private static final String GAME_VIEW_PATH =
+            "/com/example/batallanaval/view/game-view.fxml";
 
     /** The single shared instance of this manager. */
     private static final ViewManager INSTANCE = new ViewManager();
@@ -73,13 +78,39 @@ public final class ViewManager {
     }
 
     /**
+     * Loads and displays the game view, running the given initialization action on its
+     * controller (for example, to start a new game or resume a saved one).
+     *
+     * @param controllerInit action to run on the loaded controller before showing it
+     * @param <T>            the controller type of the game view
+     */
+    public <T> void showGameView(Consumer<T> controllerInit) {
+        swapScene(GAME_VIEW_PATH, controllerInit);
+    }
+
+    /**
      * Loads the FXML at the given classpath path and sets it as the current
-     * scene. Fails fast with a descriptive message if the resource is missing.
+     * scene, with no controller initialization.
      *
      * @param fxmlPath the absolute classpath path of the FXML to load
      * @throws IllegalStateException if the FXML cannot be located or loaded
      */
     private void swapScene(String fxmlPath) {
+        swapScene(fxmlPath, null);
+    }
+
+    /**
+     * Loads the FXML at the given classpath path, optionally runs an initialization
+     * action on its controller, and sets it as the current scene. Fails fast with a
+     * descriptive message if the resource is missing.
+     *
+     * @param fxmlPath       the absolute classpath path of the FXML to load
+     * @param controllerInit optional action to run on the loaded controller; may be
+     *                       {@code null}
+     * @param <T>            the controller type
+     * @throws IllegalStateException if the FXML cannot be located or loaded
+     */
+    private <T> void swapScene(String fxmlPath, Consumer<T> controllerInit) {
         URL resourceUrl = ViewManager.class.getResource(fxmlPath);
         if (resourceUrl == null) {
             throw new IllegalStateException(
@@ -90,6 +121,12 @@ public final class ViewManager {
         try {
             FXMLLoader loader = new FXMLLoader(resourceUrl);
             Parent root = loader.load();
+
+            if (controllerInit != null) {
+                T controller = loader.getController();
+                controllerInit.accept(controller);
+            }
+
             Scene scene = new Scene(root);
             primaryStage.setScene(scene);
             primaryStage.centerOnScreen();
