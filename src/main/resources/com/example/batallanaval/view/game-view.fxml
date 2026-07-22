@@ -21,6 +21,7 @@
     <Label fx:id="titleLabel" text="Batalla Naval" styleClass="main-title"/>
     <Label fx:id="statusLabel" text="Tu turno: dispara en el tablero principal"
            styleClass="status" wrapText="true"/>
+    <Label fx:id="timerLabel" text="Tiempo: 00:00" styleClass="status"/>
 
     <!-- The two boards are injected by the controller into these containers -->
     <HBox alignment="CENTER" spacing="40">
