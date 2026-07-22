@@ -1,14 +1,50 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
 
-<AnchorPane xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller="$CONTROLLER_NAME$"
-            prefHeight="400.0" prefWidth="600.0" >
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.example.batallanaval.controller.PlacementController"
+      alignment="TOP_CENTER"
+      spacing="15"
+      styleClass="game-root">
 
-</AnchorPane>
+    <padding>
+        <Insets top="20" bottom="20" left="20" right="20"/>
+    </padding>
+
+    <Label text="Coloca tu flota" styleClass="main-title"/>
+    <Label fx:id="statusLabel"
+           text="Arrastra cada barco al tablero. Usa 'Rotar' para cambiar la orientacion."
+           styleClass="status" wrapText="true"/>
+
+    <HBox alignment="CENTER" spacing="40">
+        <!-- The board being filled in -->
+        <VBox alignment="CENTER" spacing="8">
+            <Label text="Tablero de Posicion" styleClass="board-title"/>
+            <StackPane fx:id="boardContainer"/>
+        </VBox>
+
+        <!-- The tray with the ships left to place -->
+        <VBox alignment="TOP_CENTER" spacing="10" prefWidth="220">
+            <Label text="Barcos por colocar" styleClass="board-title"/>
+            <FlowPane fx:id="shipTray" hgap="10" vgap="10" prefWrapLength="200"/>
+        </VBox>
+    </HBox>
+
+    <HBox alignment="CENTER" spacing="15">
+        <Button fx:id="rotateButton" text="Rotar (Horizontal)"
+                onAction="#onRotate" styleClass="secondary-button"/>
+        <Button fx:id="randomButton" text="Colocar aleatorio"
+                onAction="#onRandom" styleClass="secondary-button"/>
+        <Button fx:id="startButton" text="Empezar partida"
+                onAction="#onStart" styleClass="primary-button" disable="true"/>
+    </HBox>
+
+</VBox>
