@@ -4,9 +4,6 @@ Juego de estrategia "Batalla Naval" (Battleship) desarrollado en JavaFX, donde u
 jugador humano se enfrenta a la máquina. Cada jugador despliega una flota de 10 barcos
 en un tablero de 10x10 e intenta hundir la flota del oponente.
 
-Mini Proyecto #4 — **750014C Fundamentos de Programación Orientada a Eventos**
-Universidad del Valle.
-
 ---
 
 ## Descripción
@@ -121,5 +118,6 @@ El código sigue la arquitectura Modelo-Vista-Controlador (MVC):
 
 ## Autor
 
-**Jorge Iván Belalcázar**
-Universidad del Valle — Fundamentos de Programación Orientada a Eventos (750014C)
+**Jorge Iván Belalcázar**<br>
+Universidad del Valle<br>
+Fundamentos de Programación Orientada a Eventos (750014C)
