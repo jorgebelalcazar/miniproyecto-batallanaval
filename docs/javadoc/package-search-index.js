@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"m":"com.example.batallanaval","l":"com.example.batallanaval"},{"m":"com.example.batallanaval","l":"com.example.batallanaval.controller"},{"m":"com.example.batallanaval","l":"com.example.batallanaval.view"}];updateSearchResults();
